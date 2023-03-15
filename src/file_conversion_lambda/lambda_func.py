@@ -1,9 +1,7 @@
 import awswrangler as wr
 import urllib
-import boto3
 import os
 
-S3=boto3.resource("S3")
     
 def lambda_handler(event, context):
 
@@ -14,7 +12,17 @@ def lambda_handler(event, context):
         file_name = key.split("/")[-1].split(".")[0]
         df = wr.s3.read_csv(f"s3://{bucket}/{key}", dataset=True)
         
-        wr.s3.to_parquet(df, path=f"s3://{output_bucket}/ingested_csv/{file_name}.parquet")
+        # will create a table in the Default Glue DB or whatever is set in global config: https://github.com/aws/aws-sdk-pandas/blob/main/tutorials/021%20-%20Global%20Configurations.ipynb
+        # table name will be the filename
+        wr.s3.to_parquet(
+            df, 
+            path=f"s3://{output_bucket}/ingested_csv/{file_name}/",
+            dataset=True,
+            table=file_name,
+            mode="append", #default is append
+            index=False, 
+            schema_evolution=True,
+        )
         
         print(" Successfully converted the file")
         

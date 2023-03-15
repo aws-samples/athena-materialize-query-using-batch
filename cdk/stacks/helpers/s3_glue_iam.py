@@ -46,13 +46,15 @@ class GlueDataCatalogPermissions:
             try:
                 s3_path = client.get_table(DatabaseName=self.database,Name=t)['Table']['StorageDescriptor']['Location']
                 print(f'Found S3 Path:: {s3_path}')
-            except ClientError as exc:
+            except ClientError as exc: # table doesn't exist
                 if self.write_destination_bucket is not None and exc.response['Error']['Code']=='EntityNotFoundException':
                     # check if permissions are being requested to create new table
                     s3_path=f's3://{self.write_destination_bucket}/{self.database}/{t}'
                     print(f'DIDNT FIND S3 Path:: {s3_path}')
                 else:
-                    LOGGER.error(f"TABLE:: [{t}] was not found in DB [{self.database}] and no [{self.write_destination_bucket}] was passed")
+                    LOGGER.error(f"TABLE:: [{t}] was not found in DB [{self.database}] and no write_destination_bucket was \
+                                 passed. Ensure the table already exists or pass in a write_destination_bucket where the table\
+                                 will store data.")
                     LOGGER.exception(exc)
             
             loc = urlparse(s3_path)

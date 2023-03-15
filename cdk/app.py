@@ -5,7 +5,6 @@ from stacks import BatchMaterializeInfraStack, SampleBatchJob,FileTypeConversion
 
 app = cdk.App()
 
-
 my_env = cdk.Environment(
     account=os.environ["CDK_DEFAULT_ACCOUNT"],
     region=os.environ["CDK_DEFAULT_REGION"]
@@ -23,8 +22,8 @@ sample_job_stack = SampleBatchJob(app,
     )
 sample_job_stack.add_dependency(base_infra_stack)
 
-# file_conversion_stack = FileTypeConversionStack(app, 
-#     construct_id="FileConversionLambdaStack",
-# )
+file_conversion_stack = FileTypeConversionStack(app, 
+    construct_id="FileConversionLambdaStack",
+)
 
 app.synth()

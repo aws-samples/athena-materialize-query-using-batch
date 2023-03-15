@@ -24,10 +24,11 @@ class SampleBatchJob(Stack):
             dst_tables.get_s3_policy('write')
         ]
         
-        sample_job = batch_job_utils.get_batch_job_definition(self,
-            ecr_repo_uri=base_env.base_ecr_repo_uri,
+        sample_job = batch_job_utils.get_batch_job_definition(
+            self,
+            base_env=base_env,
             job_def_name="sample-covid-sql-athena-mat",
-            cmd=['python3','helloworld.py'],
+            cmd=["python3", "materialize_athena_query.py", "some_project/sample-nyc-covid.sql", "<<<TARGET_BUCKET>>>", "covid-19","covid_state_data","aggregated covid data","<<<TMP_ATHENA_BUCKET>>>"],
             job_role_policies=policies,
-            tmp_athena_bucket=base_env.athena_tmp_bucket
+            schedule = "" # some cron syntax such as (0 10 * * *) for 10am everyday
         )

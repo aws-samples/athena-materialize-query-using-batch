@@ -1,7 +1,10 @@
 from aws_cdk import (
+    Stack,
     aws_batch as batch,
     aws_iam as iam,
-    aws_s3 as s3
+    aws_s3 as s3,
+    aws_events as events,
+    aws_events_targets as targets
 )
 from typing import List
 from constructs import Construct
@@ -30,18 +33,24 @@ def _get_batch_job_role_arn(scope, policies:List) -> iam.Role:
 
     return job_role
 
-def get_batch_job_definition(scope, ecr_repo_uri:str, job_def_name:str, cmd:List[str],job_role_policies:List[iam.PolicyStatement],tmp_athena_bucket:s3.Bucket) -> batch.CfnJobDefinition:
+def get_batch_job_definition(scope: Construct,
+                             base_env:Stack, 
+                             job_def_name:str, 
+                             cmd:List[str],
+                             job_role_policies:List[iam.PolicyStatement],
+                             schedule:str = ""
+    ) -> batch.CfnJobDefinition:
 
     job_role=_get_batch_job_role_arn(scope,job_role_policies)
     
-    tmp_athena_bucket.grant_read_write(job_role)
+    base_env.tmp_athena_bucket.grant_read_write(job_role)
 
     sample_job_def = batch.CfnJobDefinition(scope,"CfnSampleJobDef",
         type="container",
         job_definition_name=job_def_name,
         platform_capabilities=["FARGATE"],
         container_properties=batch.CfnJobDefinition.ContainerPropertiesProperty(
-            image=ecr_repo_uri,
+            image=base_env.ecr_repo_uri,
             command=cmd,
             fargate_platform_configuration=batch.CfnJobDefinition.FargatePlatformConfigurationProperty(
                 platform_version="1.4.0"
@@ -61,6 +70,24 @@ def get_batch_job_definition(scope, ecr_repo_uri:str, job_def_name:str, cmd:List
             job_role_arn=job_role.role_arn
         )
     )
+
+
+    if schedule:
+        rule = events.Rule(
+            scope,
+            f"batcham_{job_def_name}_schedule",
+            enabled=True,
+            schedule = events.Schedule.expression(schedule),
+        )
+        rule.add_target(
+            targets.BatchJob(
+                job_queue_arn = base_env.batch_job_queue.attr_job_queue_arn,
+                job_queue_scope = base_env.batch_job_queue,
+                job_definition_arn = sample_job_def.ref,
+                job_definition_scope = sample_job_def
+            )
+        )
+
     return sample_job_def
 
 

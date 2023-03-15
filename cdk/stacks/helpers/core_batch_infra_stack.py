@@ -17,11 +17,11 @@ class BatchMaterializeInfraStack(Stack):
 
         ecr_repo = ecr.Repository(self,"CfnECRRepo", repository_name="batch-materialize-env")
         # for example only, make a base ECR URI available for Batch jobs based on this stack
-        self.base_ecr_repo_uri = ecr_repo.repository_uri
+        self.ecr_repo_uri = ecr_repo.repository_uri
 
         vpc = ec2.Vpc(self, "CfnVPCBatchMaterializeQuery")
 
-        batch_compute_env = batch.CfnComputeEnvironment(self,'CfnComputeEnvironmentBatchMaterializeQuery',
+        self.batch_compute_env = batch.CfnComputeEnvironment(self,'CfnComputeEnvironmentBatchMaterializeQuery',
             type="MANAGED",
             compute_environment_name="BatchMaterializeQueryCE",
             state="Enabled",
@@ -39,20 +39,18 @@ class BatchMaterializeInfraStack(Stack):
             )
         )
         
-        batch_job_queue = batch.CfnJobQueue(self,"CfnJobQueueBatchMaterializeQuery",
+        self.batch_job_queue = batch.CfnJobQueue(self,"CfnJobQueueBatchMaterializeQuery",
             compute_environment_order=[batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
-                compute_environment=batch_compute_env.attr_compute_environment_arn,
+                compute_environment=self.batch_compute_env.attr_compute_environment_arn,
                 order=1
             )],
             priority=1,
             state="ENABLED"
         )
         
-        athena_bucket = s3.Bucket.from_bucket_name(
+        self.tmp_athena_bucket = s3.Bucket.from_bucket_name(
             self,
             "athena-tmp-bucket",
             bucket_name=f'athena-tmp-bucket-{account_id}'
         )
-        #make athena bucket available
-        self.athena_tmp_bucket=athena_bucket
 

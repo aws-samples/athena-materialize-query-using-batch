@@ -51,6 +51,7 @@ The next part of the solution orchestrates Athena based ETLs. Using this approac
 * destination table/glue DB for the materialized result
 * IAM permissions for those locations
 * the Batch job definition
+
   * The included helper functions enable BI authors to define the above with minimal custom code.
   * Note, in the job definition, the syntax for the `cmd` parameter defines the logic for the ETL. It is the command that will be passed to the docker container. The format is:
   ```
@@ -80,13 +81,6 @@ The next part of the solution orchestrates Athena based ETLs. Using this approac
 4. Declare the stack in the `cdk/stacks/app.py` file
 5. Deploy the job with the cdk cli. EG: `cdk deploy SampleJobStack --profile some-named-profile-here`
 
-
-
-# Raw Dev Notes
-
-## TODO Open questions
-* Double check: in the lambda ingestion, how does it know what table/DB to make the csv a part of
-* How to schedule the actual batch job (eg: in batch_job_stack). Forget if i included a place to put cron scheduling syntax
 
 ## App Structure
 The app is structured as follows
@@ -122,7 +116,9 @@ The app is structured as follows
 * For local testing, use an AWS CLI named profile
 * cd into the `src` directory
 * Build the image locally with `make build-image-nc`
-* once the image is built, it can be run with `AWS_PROFILE=profile_name make run-local docker`. This passes the named profile's credentials to the docker container and runs the app logic locally.
+* once the image is built, it can be run with `AWS_PROFILE=profile_name make run-local-docker`. 
+  * This passes the named profile's credentials to the docker container and runs the app logic locally.
+  * be sure to adjust the args passed into the command in the Makefile
 * if you make code changes, both the above make commands should be run so the docker image can pickup the changes
 
 ## CDK Notes
